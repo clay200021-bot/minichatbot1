@@ -1,0 +1,112 @@
+﻿<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Chat + Bot</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+        body {font-family: 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); margin:0; padding:20px; color:#333;}
+        h2 {text-align:center; color:white; font-size:2.5rem; margin-bottom:30px; text-shadow:0 2px 10px rgba(0,0,0,0.3);}
+        #chat-container {max-width:800px; margin:0 auto; background:white; border-radius:20px; box-shadow:0 20px 50px rgba(0,0,0,0.3); overflow:hidden;}
+        #chat-box {height:520px; padding:20px; overflow-y:auto; background:#f9f9f9;}
+        #chat-box p {margin:12px 0; padding:14px 20px; border-radius:20px; max-width:80%; word-wrap:break-word; animation:fadeIn 0.4s;}
+        #chat-box p.sent {background:#3498db; color:white; margin-left:auto; border-bottom-right-radius:4px;}
+        #chat-box p.received {background:#e0e0e0; color:#2c3e50; margin-right:auto; border-bottom-left-radius:4px;}
+        #chat-box p.bot {background:#9b59b6; color:white; margin-right:auto;}
+        #message-input {display:flex; padding:20px; background:#fff; border-top:1px solid #eee;}
+        input[type="text"] {flex:1; padding:15px 20px; font-size:16px; border:2px solid #ddd; border-radius:50px; outline:none;}
+        input[type="text"]:focus {border-color:#3498db;}
+        button {padding:15px 35px; margin-left:12px; background:#3498db; color:white; border:none; border-radius:50px; font-weight:bold; cursor:pointer;}
+        button:hover {background:#2980b9;}
+        .status {text-align:center; padding:12px; background:#27ae60; color:white; font-weight:bold;}
+        @keyframes fadeIn {from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);}}
+    </style>
+</head>
+<body>
+
+<h2>Mini Chat + Bot</h2>
+<div id="chat-container">
+    <div class="status">Ulanish muvaffaqiyatli!</div>
+    <div id="chat-box">
+        <p class="bot">Salom! Men sizga yordam berish uchun shu yerdaman. Savolingiz bo‘lsa yozing</p>
+    </div>
+    <div id="message-input">
+        <input type="text" id="message" placeholder="Xabar yozing..." autocomplete="off">
+        <button onclick="sendMessage()">Yuborish</button>
+    </div>
+</div>
+
+<script>
+    // Public echo server
+    const socket = io('https://socketio-chat-example.onrender.com');
+    const chatBox = document.getElementById('chat-box');
+
+    // Bot javoblari
+    const botAnswers = {
+        "salom": "Salom! Sizga qanday yordam bera olaman?",
+        "qalaysan": "Rahmat, yaxshiman! Siz qalaysiz?",
+        "bugun sana": new Date().toLocaleDateString('uz-UZ', {weekday:'long', year:'numeric', month:'long', day:'numeric'}),
+        "hoztest vaqt": new Date().toLocaleTimeString('uz-UZ', {hour:'2-digit', minute:'2-digit'}),
+        "ob-havo": "Hozir Toshkentda taxminan +18…+22°C, quyoshli kun!",
+        "isming nima": "Mening ismim MiniBot. Sizniki-chi?",
+        "rahmat": "Arzimaydi! Yana savolingiz bo‘lsa yozing",
+        "qayerdansan": "Men internetda yashayman, lekin yuragim O‘zbekistonda",
+        "nima qila olasan": "Sana, vaqt, ob-havo aytaman, oddiy savollarga javob beraman va suhbatlashaman",
+        "xayr": "Xayr! Yana keling, doim kutaman",
+        "yaxshi": "Zo‘r! Yana nima qiziqarli gaplar bor?",
+        "yomon": "Uzr, keyingi safar yaxshiroq bo‘ladi!",
+        "hazil ayt": "Nega kompyuter hech qachon sovqotmaydi? Chunki unda Windows bor!",
+        "yana hazil": "Dasturchi nima uchun doim sovuq bo‘ladi? Chunki u fan bilan ishlaydi!"
+    };
+
+    function getBotAnswer(text) {
+        const lower = text.toLowerCase().trim();
+        
+        for (let key in botAnswers) {
+            if (lower.includes(key)) {
+                return typeof botAnswers[key] === 'function' ? botAnswers[key]() : botAnswers[key];
+            }
+        }
+        // Agar tushunmasa
+        const randomReplies = [
+            "Bu haqda hali o‘rganayapman",
+            "Tushunmadim, yana boshqacha yozib ko‘ring",
+            "Qiziqarli savol! Hozircha javobim yo‘q",
+            "Yana savolingiz bo‘lsa yozing"
+        ];
+        return randomReplies[Math.floor(Math.random() * randomReplies.length)];
+    }
+
+    function addMessage(text, type) {
+        const p = document.createElement('p');
+        p.textContent = text;
+        p.className = type;
+        chatBox.appendChild(p);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function sendMessage() {
+        let input = document.getElementById('message');
+        let msg = input.value.trim();
+        if (!msg) return;
+
+        // O‘z xabarimiz
+        addMessage(msg, 'sent');
+        
+        // Bot javobi (1000ms keyin)
+        setTimeout(() => {
+            addMessage(getBotAnswer(msg), 'bot');
+        }, 800 + Math.random() * 700);
+
+        input.value = '';
+    }
+
+    // Enter tugmasi
+    document.getElementById('message').addEventListener('keypress', e => {
+        if (e.key === 'Enter') sendMessage();
+    });
+</script>
+
+</body>
+</html>
